@@ -45,8 +45,8 @@ int mark = 0;
 int verbose = 0;
 char *address = "127.0.0.1:3310";
 
-int clamav_dataline(struct osmtpd_ctx *, const char *);
-int clamav_commit(struct osmtpd_ctx *);
+void clamav_dataline(struct osmtpd_ctx *, const char *);
+void clamav_commit(struct osmtpd_ctx *);
 void *clamav_message_new(struct osmtpd_ctx *);
 void clamav_message_free(struct osmtpd_ctx *, void *);
 void clamav_finalize(int, short, void *);
@@ -84,7 +84,7 @@ main(int argc, char *argv[])
 	return 0;
 }
 
-int
+void
 clamav_dataline(struct osmtpd_ctx *ctx, const char *line)
 {
 	struct clamav_message *message = ctx->local_message;
@@ -97,14 +97,14 @@ clamav_dataline(struct osmtpd_ctx *ctx, const char *line)
 		if (line[0] == '.')
 			line++;
 		fprintf(message->cm_ofile, "%s\r\n", line);
-		return 0;
+		return;
 	}
 
 	fflush(message->cm_ofile);
 	if (verbose)
 		warnx("Scanning message: %llx", ctx->reqid);
 	if ((message->cm_clamfd = clamav_connect(message)) == -1)
-		return -1;
+		return;
 
 	event_set(&(message->cm_rev), message->cm_clamfd, EV_READ,
 	    clamav_finalize, ctx);
@@ -125,13 +125,11 @@ clamav_dataline(struct osmtpd_ctx *ctx, const char *line)
 
 	if (sendmsg(message->cm_clamfd, &msg, 0) == -1) {
 		clamav_errx(message, "Could not send mail to clamav");
-		return -1;
+		return;
 	}
-
-	return 0;
 }
 
-int
+void
 clamav_commit(struct osmtpd_ctx *ctx)
 {
 	struct clamav_message *message = ctx->local_message;
@@ -142,8 +140,6 @@ clamav_commit(struct osmtpd_ctx *ctx)
 		osmtpd_filter_reject(ctx, 450, "Virus detected");
 	else
 		osmtpd_filter_proceed(ctx);
-
-	return 0;
 }
 
 void *
