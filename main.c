@@ -233,7 +233,16 @@ clamav_connect(struct clamav_message *message)
 	case '/':
 		sa = (struct sockaddr *)&sun;
 		sun.sun_family = AF_UNIX;
+#if defined(__APPLE__) && defined(__MACH__)	/* macOS, iOS, tvOS, watchOS */ \
+ || defined(__FreeBSD__)			/* FreeBSD */ \
+ || defined(__NetBSD__)				/* NetBSD */ \
+ || defined(__OpenBSD__)			/* OpenBSD */ \
+ || defined(__DragonFly__)			/* DragonFly BSD */ \
+ || defined(__QNX__) || defined(__QNXNTO__)	/* QNX Neutrino RTOS */ \
+ || defined(_AIX)				/* IBM AIX */ \
+ || defined(__OS2__)
 		sun.sun_len = sizeof(sun);
+#endif
 		if (strlcpy(sun.sun_path, address,
 		    sizeof(sun.sun_path)) >= sizeof(sun.sun_path))
 			osmtpd_errx(1, "-s address too long");
